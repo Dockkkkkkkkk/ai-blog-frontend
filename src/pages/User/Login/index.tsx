@@ -100,6 +100,17 @@ const Login: React.FC = () => {
       });
     }
   };
+
+  const setUserInfo = async (values: API.CurrentUser) => {
+    if (values) {
+      flushSync(() => {
+        setInitialState((s) => ({
+          ...s,
+          currentUser: values,
+        }));
+      });
+    }
+  };
   const handleSubmit = async (values: API.LoginParams) => {
     try {
       // 登录
@@ -107,10 +118,11 @@ const Login: React.FC = () => {
         ...values,
         type,
       });
-      if (msg.status === 'ok') {
+      if (msg.data.username != null) {
         const defaultLoginSuccessMessage = '登录成功！';
         message.success(defaultLoginSuccessMessage);
-        await fetchUserInfo();
+        // await fetchUserInfo();
+        await setUserInfo(msg.data);
         const urlParams = new URL(window.location.href).searchParams;
         history.push(urlParams.get('redirect') || '/');
         return;

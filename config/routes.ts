@@ -4,7 +4,7 @@ export default [
     layout: false,
     routes: [{ name: '登录', path: '/user/login', component: './User/Login' }],
   },
-  { path: '/add-idea', name: '添加素材', icon: 'smile', component: './AddIdea' },
+  { path: '/add-idea', name: '添加素材', icon: 'smile', component: './AddIdea'},
   { path: '/welcome', name: '欢迎', icon: 'smile', component: './Welcome' },
   {
     path: '/admin',
