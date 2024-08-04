@@ -1,6 +1,6 @@
 import { PageContainer } from '@ant-design/pro-components';
 import { useModel } from '@umijs/max';
-import { Card, theme, Form, message, Flex, Layout, Avatar, List, Divider } from 'antd';
+import { Card, theme, Form, message, Flex, Layout, Avatar, List, Divider, Button, Drawer } from 'antd';
 import { useState } from 'react';
 import React from 'react';
 import {
@@ -186,25 +186,16 @@ const Welcome: React.FC = () => {
       title: 'Ant Design Title 4',
     },
   ];
-  interface UserItem {
-  email: string;
-  gender: string;
-  name: {
-    first: string;
-    last: string;
-    title: string;
-  };
-  nat: string;
-  picture: {
-    large: string;
-    medium: string;
-    thumbnail: string;
-  };
-}
+  const ContainerHeight = 400;
+  const [open, setOpen] = useState(false);
 
-const fakeDataUrl =
-  'https://randomuser.me/api/?results=20&inc=name,gender,email,nat,picture&noinfo';
-const ContainerHeight = 400;
+  const showDrawer = () => {
+    setOpen(true);
+  };
+
+  const onClose = () => {
+    setOpen(false);
+  };
   return (
 
     <PageContainer>
@@ -249,6 +240,27 @@ const ContainerHeight = 400;
                           autoSize={{ minRows: 10, maxRows: 500 }}
                         />
                       </Form.Item>
+                      <div style={{ textAlign: 'right', float: 'right' }}>
+                        <Button type="primary" onClick={showDrawer}>
+                          素材列表
+                        </Button>
+                      </div>
+
+                      <Drawer title="素材列表" onClose={onClose} open={open}>
+                        <List
+                          itemLayout="horizontal"
+                          dataSource={data}
+                          renderItem={(item, index) => (
+                            <List.Item
+                              actions={[<a key="list-edit">edit</a>, <a key="list-delete">delete</a>]}>
+                              <List.Item.Meta
+                                title={<a href="https://ant.design">{item.title}</a>}
+                                description="Ant Design"
+                              />
+                            </List.Item>
+                          )}
+                        />
+                      </Drawer>
                     </ProForm>
 
                     <div
