@@ -1,4 +1,4 @@
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer} from '@ant-design/pro-components';
 import { useModel } from '@umijs/max';
 import { Card, theme, Form, message, Flex, Layout, Avatar, List, Divider, Button, Drawer } from 'antd';
 import { useState } from 'react';
@@ -10,6 +10,7 @@ import { Input } from 'antd';
 import VirtualList from 'rc-virtual-list';
 import { Descriptions } from 'antd';
 import type { DescriptionsProps } from 'antd';
+import BlogList from '@/components/BlogList';
 
 const { TextArea } = Input;
 
@@ -284,24 +285,12 @@ const Welcome: React.FC = () => {
                   color: '#1E1E1E',
                   fontSize: 20,
                   fontWeight: 'bold',
-                  marginBottom: 10,
+                  marginBottom: 5,
                 }}
               >
                 我的博客
               </div>
-              <Divider />
-              <List
-                itemLayout="horizontal"
-                dataSource={data}
-                renderItem={(item, index) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      title={<a href="https://ant.design">{item.title}</a>}
-                      description="Ant Design"
-                    />
-                  </List.Item>
-                )}
-              />
+              <BlogList></BlogList>
             </Sider>
           </Layout>
         </Layout>
