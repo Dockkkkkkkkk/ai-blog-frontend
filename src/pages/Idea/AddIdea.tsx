@@ -1,6 +1,6 @@
-import { PageContainer} from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components';
 import { useModel } from '@umijs/max';
-import { Card, theme, Form, message, Flex, Layout, Avatar, List, Divider, Button, Drawer } from 'antd';
+import { Card, theme, Form, message, Flex, Layout, Avatar, List, Divider, Button, Drawer, Descriptions } from 'antd';
 import { useState } from 'react';
 import React from 'react';
 import {
@@ -8,10 +8,13 @@ import {
 } from '@ant-design/pro-components';
 import { Input } from 'antd';
 import VirtualList from 'rc-virtual-list';
-import { Descriptions } from 'antd';
 import type { DescriptionsProps } from 'antd';
 import BlogList from '@/components/BlogList';
-
+import IdeaList from '@/components/IdeaList';
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { currentUser } from '@/services/ant-design-pro/api';
+import { requestConfig } from '../../requestConfig';
 const { TextArea } = Input;
 
 /**
@@ -93,13 +96,94 @@ const InfoCard: React.FC<{
     </div>
   );
 };
+interface DescriptionType {
+  "id": number,
+  "title": string,
+  "description": string,
+  "userId": string,
+  "materials": string[],
+  "generatedContent": string,
+  "createdTime": string,
+  "updatedTime": string
+}
+
+const initialDescription: DescriptionType = {
+  id: 0,
+  title: '',
+  description: '',
+  userId: '',
+  materials: [],
+  generatedContent: '',
+  createdTime: '',
+  updatedTime: '',
+};
+
 
 const Welcome: React.FC = () => {
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
   const [value, setValue] = useState('');
+  const [blogIdList, setblogIdList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [description, setDescription] = useState<DescriptionType>(initialDescription);
+  const [blogId, setBlogId] = useState<number | null>(null);
+  const [refreshBlogList, setRefreshBlogList] = useState(false);
   const [form] = Form.useForm();
+  useEffect(() => {
+    const { search } = window.location;
+    const params = new URLSearchParams(search);
+    const blogId = params.get('blogId');
+    if (blogId) {
+      setBlogId(Number(blogId));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (blogId !== null) {
+      const getDescription = () => {
+        const requestBody = {
+          blogId: blogId,
+        };
+        fetch(`${requestConfig.baseURL}/blog/getDescription`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        })
+          .then((res) => res.json())
+          .then((body) => {
+            setDescription(body.data);
+          })
+          .catch(() => {
+            console.error('Failed to fetch description');
+          });
+      };
+
+      getDescription();
+    }
+  }, [blogId]);
+
   const onFinish = (values: any) => {
+    const requestBody = {
+      blogId: blogId,
+      content: value
+    };
+    fetch(`${requestConfig.baseURL}/idea/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+      .then((res) => res.json())
+      .then((body) => {
+        setRefreshBlogList(prev => !prev);
+        message.success('添加成功');
+      })
+      .catch(() => {
+        console.error('Failed to fetch description');
+      });
     console.log(values);
   };
   const onReset = () => {
@@ -145,48 +229,6 @@ const Welcome: React.FC = () => {
     maxWidth: 'calc(100%)',
   };
 
-  const items: DescriptionsProps['items'] = [
-    {
-      key: '1',
-      label: 'UserName',
-      children: 'Zhou Maomao',
-    },
-    {
-      key: '2',
-      label: 'Telephone',
-      children: '1810000000',
-    },
-    {
-      key: '3',
-      label: 'Live',
-      children: 'Hangzhou, Zhejiang',
-    },
-    {
-      key: '4',
-      label: 'Address',
-      span: 2,
-      children: 'No. 18, Wantang Road, Xihu District, Hangzhou, Zhejiang, China',
-    },
-    {
-      key: '5',
-      label: 'Remark',
-      children: 'empty',
-    },
-  ];
-  const data = [
-    {
-      title: 'Ant Design Title 1',
-    },
-    {
-      title: 'Ant Design Title 2',
-    },
-    {
-      title: 'Ant Design Title 3',
-    },
-    {
-      title: 'Ant Design Title 4',
-    },
-  ];
   const ContainerHeight = 400;
   const [open, setOpen] = useState(false);
 
@@ -248,19 +290,7 @@ const Welcome: React.FC = () => {
                       </div>
 
                       <Drawer title="素材列表" onClose={onClose} open={open}>
-                        <List
-                          itemLayout="horizontal"
-                          dataSource={data}
-                          renderItem={(item, index) => (
-                            <List.Item
-                              actions={[<a key="list-edit">edit</a>, <a key="list-delete">delete</a>]}>
-                              <List.Item.Meta
-                                title={<a href="https://ant.design">{item.title}</a>}
-                                description="Ant Design"
-                              />
-                            </List.Item>
-                          )}
-                        />
+                        <IdeaList refresh={refreshBlogList}></IdeaList>
                       </Drawer>
                     </ProForm>
 
@@ -275,7 +305,34 @@ const Welcome: React.FC = () => {
                   </div>
                 </Card>
                 <Footer style={footerStyle}>
-                  <Descriptions title="博客信息" layout="vertical" items={items} />
+                  <Descriptions title="博客信息" layout="vertical">
+                    <Descriptions.Item label="序号">
+                      {description.id !== undefined && description.id !== null ? description.id : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="标题">
+                      {description.title ? description.title : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="描述">
+                      {description.description
+                        ? description.description.length > 10
+                          ? `${description.description.substring(0, 10)}...`
+                          : description.description
+                        : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="内容">
+                      {description.generatedContent !== undefined
+                        && description.generatedContent !== null
+                        && description.generatedContent.length > 0 ? '有' : '无'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="最近更新时间">
+                      {description.updatedTime ? description.updatedTime : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="素材数量">
+                      {description.materials && description.materials.length > 0
+                        ? description.materials.length
+                        : '0'}
+                    </Descriptions.Item>
+                  </Descriptions>
                 </Footer>
               </div>
             </Content>

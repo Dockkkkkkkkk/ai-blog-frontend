@@ -102,7 +102,7 @@ const BlogList: React.FC = () => {
             >
               <List.Item.Meta
                 // avatar={<Avatar src={item.picture.large} />}
-                title={<a href="https://ant.design">{item.title}</a>}
+                title={<a href={`/add-idea?blogId=${item.id}`}>{item.title}</a>}
                 description={item.description}
               />
               <div></div>

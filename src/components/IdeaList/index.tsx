@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { Avatar, Divider, List, Skeleton } from 'antd';
+import { Avatar, Divider, List, message, Skeleton, Modal } from 'antd';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { requestConfig } from '../../requestConfig';
 // import type { List } from 'lodash';
 interface DataType {
   "id": number,
-  "title": string,
-  "description": string,
-  "userId": number,
-  "materials": string[],
-  "generatedContent": string,
-  "createdTime": string,
-  "updatedTime": string
+  "blogId": number,
+  "content": string,
+  "createdAt": string,
+  "updatedAt": string
+};
+
+interface IdeaListProps {
+  refresh: boolean; // 父组件传递的状态
 }
 
-const BlogList: React.FC = () => {
+const IdeaList: React.FC<IdeaListProps> = ({ refresh }) => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DataType[]>([]);
+  const [blogId, setBlogId] = useState<number | null>(null);
   // const requestBody = {
   //   "pageNum": 0,
   //   "pageSize": 20,
@@ -37,41 +39,85 @@ const BlogList: React.FC = () => {
   //       setLoading(false);
   //     });
   // };
-  const loadMoreData = () => {
+  const loadMoreData = (clearData = false) => {
     if (loading) {
       return;
     }
+    if (clearData) {
+      setData([]); // 清空已有数据
+    }
     setLoading(true);
-    // const requestBody = {
-    //   key1: 'value1',
-    //   key2: 'value2',
-    // }; // 这里是您想要设置的请求体
     const requestBody = {
-      "pageNum": 1,
-      "pageSize": 2,
-      "userId": 7
+      "blogId": blogId
     };
-    fetch(`${requestConfig.baseURL}/blog/list`, {
-      method: 'POST', // 指定请求方法为POST
+    fetch(`${requestConfig.baseURL}/idea/searchByBlogId`, {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json', // 指定请求头为JSON格式
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody), // 将请求体转换为JSON字符串
+      body: JSON.stringify(requestBody),
     })
       .then((res) => res.json())
       .then((body) => {
-        setData([...data, ...body.data.list]);
+        setData(clearData ? body.data : [...data, ...body.data]); // 根据是否清除数据来决定数据的处理方式
         setLoading(false);
       })
       .catch(() => {
         setLoading(false);
       });
   };
-  
+
 
   useEffect(() => {
-    loadMoreData();
+    const { search } = window.location;
+    const params = new URLSearchParams(search);
+    const blogIdFromUrl = params.get('blogId');
+    if (blogIdFromUrl) {
+      setBlogId(Number(blogIdFromUrl));
+    }
   }, []);
+
+  useEffect(() => {
+    if (blogId) {
+      loadMoreData(true); // 刷新时清空数据
+    }
+  }, [blogId, refresh]);
+
+  const deleteIdea=(ideaId:number)=>{
+    const requestBody = {
+      "ideaId": ideaId
+    };
+    fetch(`${requestConfig.baseURL}/idea/removeById`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+      .then((res) => res.json())
+      .then((body) => {
+        loadMoreData(true)
+        setLoading(false);
+        if(body.message === 'success'){
+          message.success('删除成功');
+        }else{
+          message.error('删除失败');
+        }   
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }
+
+  const showDeleteConfirm = (ideaId: number) => {
+    if(confirm("确认删除该素材吗？")){
+      deleteIdea(ideaId);
+    }
+  };
+
+  
+
+
 
   return (
     <div
@@ -95,17 +141,24 @@ const BlogList: React.FC = () => {
           dataSource={data}
           renderItem={(item) => (
             <List.Item key={item.id}
-            actions={[
-              <a key="list-loadmore-edit">Edit</a>,
-              <a key="list-loadmore-delete" onClick={() => {}}>Delete</a>,
-            ]}
+              actions={[
+                <a key="list-loadmore-edit">Edit</a>,
+                <a key="list-loadmore-delete" onClick={() => showDeleteConfirm(item.id)}>Delete</a>,
+              ]}
             >
               <List.Item.Meta
-                // avatar={<Avatar src={item.picture.large} />}
-                title={<a href="https://ant.design">{item.title}</a>}
-                description={item.description}
+              // avatar={<Avatar src={item.picture.large} />}
+              // title={<a href="https://ant.design">{item.id}</a>}
+              // description={item.updatedAt}
               />
-              <div></div>
+              <div>
+                {item.updatedAt}
+                <br />
+                {
+                  item?.content?.length > 10 ? `${item?.content.substring(0, 10)}...` : item?.content
+                }
+
+              </div>
             </List.Item>
           )}
         />
@@ -114,4 +167,4 @@ const BlogList: React.FC = () => {
   );
 };
 
-export default BlogList;
+export default IdeaList;
